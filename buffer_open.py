@@ -144,6 +144,33 @@ def buffer_closing_cb(data, signal, buffer):
     return weechat.WEECHAT_RC_OK
 
 
+LAYOUT_APPLY_RE = re.compile(r"/layout apply(?: (\S+)(?: buffers)?)?")  # TODO: handle different spaces
+
+
+def layout_apply_cb(data, buffer, command):
+    m = LAYOUT_APPLY_RE.match(command)
+    if m:
+        # TODO: add option for this
+        layout_name = m.group(1) or "default"
+        hdata_layout = weechat.hdata_get("layout")
+        layouts = weechat.hdata_get_list(hdata_layout, "gui_layouts")
+        layout = weechat.hdata_search(hdata_layout, layouts, "${layout.name} == " + layout_name, 1)
+        if layout:
+            hdata_layout_buffer = weechat.hdata_get("layout_buffer")
+            layout_buffer = weechat.hdata_pointer(hdata_layout, layout, "layout_buffers")
+            while layout_buffer:
+                plugin_name = weechat.hdata_string(hdata_layout_buffer, layout_buffer, "plugin_name")
+                buffer_name = weechat.hdata_string(hdata_layout_buffer, layout_buffer, "buffer_name")
+                full_name = "{}.{}".format(plugin_name, buffer_name)
+
+                buffer = weechat.buffer_search("==", full_name)
+                if not buffer:
+                    buffer_open_full_name(full_name)
+
+                layout_buffer = weechat.hdata_move(hdata_layout_buffer, layout_buffer, 1)
+    return weechat.WEECHAT_RC_OK
+
+
 if __name__ == "__main__" and IMPORT_OK:
     if weechat.register(SCRIPT_NAME, SCRIPT_AUTHOR, SCRIPT_VERSION, SCRIPT_LICENSE, SCRIPT_DESC, "", ""):
         weechat.hook_hsignal("10000|buffer_open_full_name", "buffer_open_full_name_opened_cb", "")
@@ -158,6 +185,7 @@ if __name__ == "__main__" and IMPORT_OK:
         "command_cb", "")
 
         weechat.hook_signal("buffer_closing", "buffer_closing_cb", "")
+        weechat.hook_command_run("/layout apply*", "layout_apply_cb", "")
 
         for option, value in SETTINGS.items():
             if not weechat.config_is_set_plugin(option):
