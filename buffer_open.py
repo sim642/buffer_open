@@ -116,11 +116,31 @@ def buffer_open_full_name_irc_cb(data, signal, hashtable):
     return weechat.WEECHAT_RC_OK
 
 
-def command_cb(data, buffer, args):
+def buffer_open_full_name(full_name):
     weechat.hook_hsignal_send("buffer_open_full_name", {
-        "full_name": args
+        "full_name": full_name
     })
 
+
+def command_cb(data, buffer, args):
+    if args == "closed":
+        if buffer_closed_stack:
+            full_name = buffer_closed_stack.pop()
+            buffer_open_full_name(full_name)
+        else:
+            error("no known closed buffers")
+    else:
+        buffer_open_full_name(args)
+
+    return weechat.WEECHAT_RC_OK
+
+
+buffer_closed_stack = []
+
+
+def buffer_closing_cb(data, signal, buffer):
+    full_name = weechat.buffer_get_string(buffer, "full_name")
+    buffer_closed_stack.append(full_name)  # TODO: add limit for stack size
     return weechat.WEECHAT_RC_OK
 
 
@@ -136,6 +156,8 @@ if __name__ == "__main__" and IMPORT_OK:
 """""",
 """""".replace("\n", ""),
         "command_cb", "")
+
+        weechat.hook_signal("buffer_closing", "buffer_closing_cb", "")
 
         for option, value in SETTINGS.items():
             if not weechat.config_is_set_plugin(option):
