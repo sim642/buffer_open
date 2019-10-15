@@ -68,7 +68,7 @@ def command_plugin(plugin, command):
     weechat.command("", "/command {} {}".format(plugin, command))
 
 
-def buffer_open_opened_cb(data, signal, hashtable):
+def buffer_open_full_name_opened_cb(data, signal, hashtable):
     full_name = hashtable["full_name"]
     buffer = weechat.buffer_search("==", full_name)
     if buffer:
@@ -78,7 +78,7 @@ def buffer_open_opened_cb(data, signal, hashtable):
     return weechat.WEECHAT_RC_OK
 
 
-def buffer_open_unhandled_cb(data, signal, hashtable):
+def buffer_open_full_name_unhandled_cb(data, signal, hashtable):
     full_name = hashtable["full_name"]
     error("no handler for opening buffer {}".format(full_name))
     return weechat.WEECHAT_RC_OK
@@ -89,7 +89,7 @@ IRC_CHANNEL_RE = re.compile(r"irc\.([^.]+)\.(#.+)")  # TODO: other channel chars
 IRC_QUERY_RE = re.compile(r"irc\.([^.]+)\.(.+)")
 
 
-def buffer_open_irc_cb(data, signal, hashtable):
+def buffer_open_full_name_irc_cb(data, signal, hashtable):
     full_name = hashtable["full_name"]
     noswitch = bool(hashtable.get("noswitch", 0))  # TODO: actually use
 
@@ -117,7 +117,7 @@ def buffer_open_irc_cb(data, signal, hashtable):
 
 
 def command_cb(data, buffer, args):
-    weechat.hook_hsignal_send("buffer_open", {
+    weechat.hook_hsignal_send("buffer_open_full_name", {
         "full_name": args
     })
 
@@ -126,10 +126,10 @@ def command_cb(data, buffer, args):
 
 if __name__ == "__main__" and IMPORT_OK:
     if weechat.register(SCRIPT_NAME, SCRIPT_AUTHOR, SCRIPT_VERSION, SCRIPT_LICENSE, SCRIPT_DESC, "", ""):
-        weechat.hook_hsignal("10000|buffer_open", "buffer_open_opened_cb", "")
-        weechat.hook_hsignal("0|buffer_open", "buffer_open_unhandled_cb", "")
+        weechat.hook_hsignal("10000|buffer_open_full_name", "buffer_open_full_name_opened_cb", "")
+        weechat.hook_hsignal("0|buffer_open_full_name", "buffer_open_full_name_unhandled_cb", "")
 
-        weechat.hook_hsignal("500|buffer_open", "buffer_open_irc_cb", "")
+        weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_irc_cb", "")
 
         weechat.hook_command(SCRIPT_COMMAND, SCRIPT_DESC,
 """""",
