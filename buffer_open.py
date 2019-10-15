@@ -116,6 +116,16 @@ def buffer_open_full_name_irc_cb(data, signal, hashtable):
     return weechat.WEECHAT_RC_OK
 
 
+def buffer_open_full_name_fset_cb(data, signal, hashtable):
+    full_name = hashtable["full_name"]
+
+    if full_name == "fset.fset":
+        command_plugin("fset", "/fset")
+        return weechat.WEECHAT_RC_OK_EAT
+
+    return weechat.WEECHAT_RC_OK
+
+
 def buffer_open_full_name(full_name):
     weechat.hook_hsignal_send("buffer_open_full_name", {
         "full_name": full_name
@@ -177,6 +187,7 @@ if __name__ == "__main__" and IMPORT_OK:
         weechat.hook_hsignal("0|buffer_open_full_name", "buffer_open_full_name_unhandled_cb", "")
 
         weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_irc_cb", "")
+        weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_fset_cb", "")
 
         weechat.hook_command(SCRIPT_COMMAND, SCRIPT_DESC,
 """""",
