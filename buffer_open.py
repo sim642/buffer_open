@@ -175,7 +175,7 @@ def buffer_closing_cb(data, signal, buffer):
     return weechat.WEECHAT_RC_OK
 
 
-LAYOUT_APPLY_RE = re.compile(r"/layout apply(?: (\S+)(?: buffers)?)?")  # TODO: handle different spaces
+LAYOUT_APPLY_RE = re.compile(r"/layout apply(?:\s+(\S+)(?:\s+buffers)?)?")
 
 
 def layout_apply_cb(data, buffer, command):
