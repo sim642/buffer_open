@@ -91,26 +91,28 @@ IRC_QUERY_RE = re.compile(r"irc\.([^.]+)\.(.+)")
 
 def buffer_open_full_name_irc_cb(data, signal, hashtable):
     full_name = hashtable["full_name"]
-    noswitch = bool(hashtable.get("noswitch", 0))  # TODO: actually use
+    noswitch = bool(int(hashtable.get("noswitch", "0")))
+
+    noswitch_flag = "-noswitch " if noswitch else ""
 
     m = IRC_SERVER_RE.match(full_name)
     if m:
         server = m.group(1)
-        command_plugin("irc", "/connect {}".format(server))
+        command_plugin("irc", "/connect {}".format(server))  # /connect doesn't have -noswitch
         return weechat.WEECHAT_RC_OK_EAT
 
     m = IRC_CHANNEL_RE.match(full_name)
     if m:
         server = m.group(1)
         channel = m.group(2)
-        command_plugin("irc", "/join -server {} {}".format(server, channel))
+        command_plugin("irc", "/join {}-server {} {}".format(noswitch_flag, server, channel))
         return weechat.WEECHAT_RC_OK_EAT
 
     m = IRC_QUERY_RE.match(full_name)
     if m:
         server = m.group(1)
         nick = m.group(2)
-        command_plugin("irc", "/query -server {} {}".format(server, nick))
+        command_plugin("irc", "/query {}-server {} {}".format(noswitch_flag, server, nick))
         return weechat.WEECHAT_RC_OK_EAT
 
     return weechat.WEECHAT_RC_OK
@@ -126,21 +128,40 @@ def buffer_open_full_name_fset_cb(data, signal, hashtable):
     return weechat.WEECHAT_RC_OK
 
 
-def buffer_open_full_name(full_name):
-    weechat.hook_hsignal_send("buffer_open_full_name", {
+def buffer_open_full_name(full_name, noswitch=None):
+    hashtable = {
         "full_name": full_name
-    })
+    }
+    if noswitch is not None:
+        hashtable["noswitch"] = str(int(noswitch))  # must be str for API
+
+    weechat.hook_hsignal_send("buffer_open_full_name", hashtable)
 
 
 def command_cb(data, buffer, args):
-    if args == "closed":
+    args = args.split()
+    if len(args) >= 1 and args[0] == "closed":
         if buffer_closed_stack:
+            noswitch = len(args) >= 2 and args[1] == "-noswitch"
             full_name = buffer_closed_stack.pop()
-            buffer_open_full_name(full_name)
+            buffer_open_full_name(full_name, noswitch=noswitch)
         else:
             error("no known closed buffers")
+            return weechat.WEECHAT_RC_ERROR
+    elif len(args) >= 1:
+        noswitch = args[0] == "-noswitch"
+        if noswitch:
+            if len(args) >= 2:
+                full_name = args[1]
+            else:
+                error("missing full name")
+                return weechat.WEECHAT_RC_ERROR
+        else:
+            full_name = args[0]
+        buffer_open_full_name(full_name, noswitch=noswitch)
     else:
-        buffer_open_full_name(args)
+        error("unknown subcommand")
+        return weechat.WEECHAT_RC_ERROR
 
     return weechat.WEECHAT_RC_OK
 
@@ -175,7 +196,7 @@ def layout_apply_cb(data, buffer, command):
 
                 buffer = weechat.buffer_search("==", full_name)
                 if not buffer:
-                    buffer_open_full_name(full_name)
+                    buffer_open_full_name(full_name, noswitch=True)
 
                 layout_buffer = weechat.hdata_move(hdata_layout_buffer, layout_buffer, 1)
     return weechat.WEECHAT_RC_OK
@@ -190,9 +211,11 @@ if __name__ == "__main__" and IMPORT_OK:
         weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_fset_cb", "")
 
         weechat.hook_command(SCRIPT_COMMAND, SCRIPT_DESC,
+"""closed [-noswitch]
+  || [-noswitch] <full name>""",
 """""",
-"""""",
-"""""".replace("\n", ""),
+"""closed -noswitch %-
+  || -noswitch""".replace("\n", ""),
         "command_cb", "")
 
         weechat.hook_signal("buffer_closing", "buffer_closing_cb", "")
