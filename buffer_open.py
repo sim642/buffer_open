@@ -144,13 +144,21 @@ def buffer_open_full_name(full_name, noswitch=None):
 def command_cb(data, buffer, args):
     args = args.split()
     if len(args) >= 1 and args[0] == "closed":
-        if buffer_closed_stack:
-            noswitch = len(args) >= 2 and args[1] == "-noswitch"
-            full_name = buffer_closed_stack.pop()
-            buffer_open_full_name(full_name, noswitch=noswitch)
+        if len(args) >= 2 and args[1] == "-list":
+            if buffer_closed_stack:
+                weechat.prnt("", "closed buffers (latest first):")
+                for full_name in reversed(buffer_closed_stack):
+                    weechat.prnt("", "  {}".format(full_name))
+            else:
+                weechat.prnt("", "no known closed buffers")
         else:
-            error("no known closed buffers")
-            return weechat.WEECHAT_RC_ERROR
+            if buffer_closed_stack:
+                noswitch = len(args) >= 2 and args[1] == "-noswitch"
+                full_name = buffer_closed_stack.pop()
+                buffer_open_full_name(full_name, noswitch=noswitch)
+            else:
+                error("no known closed buffers")
+                return weechat.WEECHAT_RC_ERROR
     elif len(args) >= 1:
         noswitch = args[0] == "-noswitch"
         if noswitch:
@@ -214,10 +222,10 @@ if __name__ == "__main__" and IMPORT_OK:
         weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_fset_cb", "")
 
         weechat.hook_command(SCRIPT_COMMAND, SCRIPT_DESC,
-"""closed [-noswitch]
+"""closed [-noswitch|-list]
   || [-noswitch] <full name>""",
 """""",
-"""closed -noswitch %-
+"""closed -noswitch|-list %-
   || -noswitch""".replace("\n", ""),
         "command_cb", "")
 
