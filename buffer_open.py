@@ -91,6 +91,32 @@ def buffer_open_full_name_unhandled_cb(data, signal, hashtable):
     return weechat.WEECHAT_RC_OK
 
 
+TABLE = {
+    # "full_name": ("plugin", "command"),
+    "core.secured_data": ("core", "/secure"),
+    "core.color": ("core", "/color"),
+    "core.weechat": ("core", ""),  # do nothing because always open
+    "fset.fset": ("fset", "/fset"),
+    "irc.irc_raw": ("irc", "/server raw"),
+    "relay.relay.list": ("relay", "/relay"),
+    "relay.relay_raw": ("relay", "/relay raw"),
+    "script.scripts": ("script", "/script"),
+    "trigger.monitor": ("trigger", "/trigger monitor"),
+    "xfer.xfer.list": ("xfer", "/xfer"),  # TODO: xfer DCC chat buffer
+}
+
+
+def buffer_open_full_name_table_cb(data, signal, hashtable):
+    full_name = hashtable["full_name"]
+
+    if full_name in TABLE:
+        plugin, command = TABLE[full_name]
+        command_plugin(plugin, command)
+        return weechat.WEECHAT_RC_OK_EAT
+
+    return weechat.WEECHAT_RC_OK
+
+
 IRC_SERVER_RE = re.compile(r"irc\.server\.(.+)")
 IRC_CHANNEL_RE = re.compile(r"irc\.([^.]+)\.(#.+)")  # TODO: other channel chars
 IRC_QUERY_RE = re.compile(r"irc\.([^.]+)\.(.+)")
@@ -120,16 +146,6 @@ def buffer_open_full_name_irc_cb(data, signal, hashtable):
         server = m.group(1)
         nick = m.group(2)
         command_plugin("irc", "/query {}-server {} {}".format(noswitch_flag, server, nick))
-        return weechat.WEECHAT_RC_OK_EAT
-
-    return weechat.WEECHAT_RC_OK
-
-
-def buffer_open_full_name_fset_cb(data, signal, hashtable):
-    full_name = hashtable["full_name"]
-
-    if full_name == "fset.fset":
-        command_plugin("fset", "/fset")
         return weechat.WEECHAT_RC_OK_EAT
 
     return weechat.WEECHAT_RC_OK
@@ -227,8 +243,8 @@ if __name__ == "__main__" and IMPORT_OK:
         weechat.hook_hsignal("10000|buffer_open_full_name", "buffer_open_full_name_opened_cb", "")
         weechat.hook_hsignal("0|buffer_open_full_name", "buffer_open_full_name_unhandled_cb", "")
 
+        weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_table_cb", "")
         weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_irc_cb", "")
-        weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_fset_cb", "")
 
         weechat.hook_command(SCRIPT_COMMAND, SCRIPT_DESC,
 """closed [-noswitch|-list]
