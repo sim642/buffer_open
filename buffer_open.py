@@ -55,6 +55,10 @@ SETTINGS = {
     "layout_apply": (
         "off",
         "open closed layout buffers on /layout apply"
+    ),
+    "max_closed": (
+        "10",
+        "maximum number of closed buffers to remember"
     )
 }
 
@@ -181,8 +185,13 @@ buffer_closed_stack = []
 
 
 def buffer_closing_cb(data, signal, buffer):
+    global buffer_closed_stack
+
     full_name = weechat.buffer_get_string(buffer, "full_name")
-    buffer_closed_stack.append(full_name)  # TODO: add limit for stack size
+    buffer_closed_stack.append(full_name)
+
+    max_closed = int(weechat.config_get_plugin("max_closed"))
+    buffer_closed_stack = buffer_closed_stack[max(0, len(buffer_closed_stack) - max_closed):]
     return weechat.WEECHAT_RC_OK
 
 
