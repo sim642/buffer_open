@@ -117,9 +117,9 @@ def buffer_open_full_name_table_cb(data, signal, hashtable):
     return weechat.WEECHAT_RC_OK
 
 
-IRC_SERVER_RE = re.compile(r"irc\.server\.(.+)")
-IRC_CHANNEL_RE = re.compile(r"irc\.([^.]+)\.(#.+)")  # TODO: other channel chars
-IRC_QUERY_RE = re.compile(r"irc\.([^.]+)\.(.+)")
+IRC_SERVER_RE = re.compile(r"^irc\.server\.(.+)$")
+IRC_CHANNEL_RE = re.compile(r"^irc\.([^.]+)\.(#.+)$")  # TODO: other channel chars
+IRC_QUERY_RE = re.compile(r"^irc\.([^.]+)\.(.+)$")
 
 
 def buffer_open_full_name_irc_cb(data, signal, hashtable):
@@ -211,7 +211,7 @@ def buffer_closing_cb(data, signal, buffer):
     return weechat.WEECHAT_RC_OK
 
 
-LAYOUT_APPLY_RE = re.compile(r"/layout apply(?:\s+(\S+)(?:\s+buffers)?)?")
+LAYOUT_APPLY_RE = re.compile(r"^/layout apply(?:\s+(\S+)(?:\s+buffers)?)?$")
 
 
 def layout_apply_cb(data, buffer, command):
