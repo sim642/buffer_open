@@ -285,7 +285,15 @@ if __name__ == "__main__" and IMPORT_OK:
         weechat.hook_command(SCRIPT_COMMAND, SCRIPT_DESC,
 """closed [-noswitch|-list]
   || [-noswitch] <full name>""",
-"""""",
+"""      closed: open most recently closed buffer
+closed -list: list most recently closed buffers
+   -noswitch: try not to switch to new buffer
+
+Without subcommand, this command opens a buffer with given full name.
+
+Option "{prefix}.max_closed" specifies the number of most recently closed buffers that are remembered.
+
+If option "{prefix}.layout_apply" is on and "/layout apply" is executed, closed buffers in the layout are opened.""".format(prefix="plugins.var.python.{}".format(SCRIPT_NAME)),
 """closed -noswitch|-list %-
   || -noswitch""".replace("\n", ""),
         "command_cb", "")
