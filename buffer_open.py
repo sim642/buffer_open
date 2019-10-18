@@ -27,6 +27,20 @@
 Open buffers by full name
 """
 
+# Adding handler for other full names in this script (only if necessary) or other scripts (preferred):
+#
+# def buffer_open_full_name_cb(data, signal, hashtable):
+#     full_name = hashtable["full_name"]
+#     noswitch = bool(int(hashtable.get("noswitch", "0")))
+#
+#     if full_name == "my.buffer.full.name":
+#         # open my.buffer.full.name, considering noswitch if possible
+#         return weechat.WEECHAT_RC_OK_EAT  # prevent other callbacks from handling this full name
+#
+#     return weechat.WEECHAT_RC_OK  # let other callbacks handle this full name
+#
+# weechat.hook_hsignal("buffer_open_full_name", "buffer_open_full_name_cb", "")
+
 from __future__ import print_function
 
 SCRIPT_NAME = "buffer_open"
