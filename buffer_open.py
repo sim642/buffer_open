@@ -49,6 +49,7 @@ except ImportError:
     IMPORT_OK = False
 
 import re
+import collections
 
 
 SETTINGS = {
@@ -118,34 +119,63 @@ def buffer_open_full_name_table_cb(data, signal, hashtable):
 
 
 IRC_SERVER_RE = re.compile(r"^irc\.server\.(.+)$")
-IRC_CHANNEL_RE = re.compile(r"^irc\.([^.]+)\.(#.+)$")  # TODO: other channel chars
-IRC_QUERY_RE = re.compile(r"^irc\.([^.]+)\.(.+)$")
+IRC_BUFFER_RE = re.compile(r"^irc\.([^.]+)\.(.+)$")
+
+irc_server_connected_opens = collections.defaultdict(set)
+
+
+def irc_server_open(server, noswitch):
+    command_plugin("irc", "/connect {}".format(server))  # /connect doesn't have -noswitch
+
+
+def irc_buffer_open(server, name, noswitch):
+    is_channel = name.startswith("#")  # TODO: other channel chars
+
+    noswitch_flag = "-noswitch " if noswitch else ""
+    if is_channel:
+        command_plugin("irc", "/join {}-server {} {}".format(noswitch_flag, server, name))
+    else:
+        command_plugin("irc", "/query {}-server {} {}".format(noswitch_flag, server, name))
+
+
+def irc_server_connected_cb(data, signal, server):
+    for name, noswitch in irc_server_connected_opens[server]:
+        irc_buffer_open(server, name, noswitch)
+
+    irc_server_connected_opens[server] = set()
+    return weechat.WEECHAT_RC_OK
 
 
 def buffer_open_full_name_irc_cb(data, signal, hashtable):
     full_name = hashtable["full_name"]
     noswitch = bool(int(hashtable.get("noswitch", "0")))
 
-    noswitch_flag = "-noswitch " if noswitch else ""
-
     m = IRC_SERVER_RE.match(full_name)
     if m:
         server = m.group(1)
-        command_plugin("irc", "/connect {}".format(server))  # /connect doesn't have -noswitch
+        irc_server_open(server, noswitch)
         return weechat.WEECHAT_RC_OK_EAT
 
-    m = IRC_CHANNEL_RE.match(full_name)
+    m = IRC_BUFFER_RE.match(full_name)
     if m:
         server = m.group(1)
-        channel = m.group(2)
-        command_plugin("irc", "/join {}-server {} {}".format(noswitch_flag, server, channel))
-        return weechat.WEECHAT_RC_OK_EAT
+        name = m.group(2)
 
-    m = IRC_QUERY_RE.match(full_name)
-    if m:
-        server = m.group(1)
-        nick = m.group(2)
-        command_plugin("irc", "/query {}-server {} {}".format(noswitch_flag, server, nick))
+        hdata_irc_server = weechat.hdata_get("irc_server")
+        irc_servers = weechat.hdata_get_list(hdata_irc_server, "irc_servers")
+        irc_server = weechat.hdata_search(hdata_irc_server, irc_servers, "${irc_server.name} == " + server, 1)
+        if irc_server:
+            is_connected = bool(weechat.hdata_integer(hdata_irc_server, irc_server, "is_connected"))
+            is_connecting = bool(weechat.hdata_pointer(hdata_irc_server, irc_server, "hook_connect"))
+            if is_connected:
+                irc_buffer_open(server, name, noswitch)
+            else:
+                irc_server_connected_opens[server].add((name, noswitch))
+                if not is_connecting:
+                    irc_server_open(server, noswitch)
+        else:
+            error("unknown server {}".format(server))
+
         return weechat.WEECHAT_RC_OK_EAT
 
     return weechat.WEECHAT_RC_OK
@@ -244,7 +274,9 @@ if __name__ == "__main__" and IMPORT_OK:
         weechat.hook_hsignal("0|buffer_open_full_name", "buffer_open_full_name_unhandled_cb", "")
 
         weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_table_cb", "")
+
         weechat.hook_hsignal("500|buffer_open_full_name", "buffer_open_full_name_irc_cb", "")
+        weechat.hook_signal("irc_server_connected", "irc_server_connected_cb", "")
 
         weechat.hook_command(SCRIPT_COMMAND, SCRIPT_DESC,
 """closed [-noswitch|-list]
