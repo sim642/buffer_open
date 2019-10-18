@@ -129,7 +129,11 @@ def irc_server_open(server, noswitch):
 
 
 def irc_buffer_open(server, name, noswitch):
-    is_channel = name.startswith("#")  # TODO: other channel chars
+    hdata_irc_server = weechat.hdata_get("irc_server")
+    irc_servers = weechat.hdata_get_list(hdata_irc_server, "irc_servers")
+    irc_server = weechat.hdata_search(hdata_irc_server, irc_servers, "${irc_server.name} == " + server, 1)
+    chantypes = weechat.hdata_string(hdata_irc_server, irc_server, "chantypes")
+    is_channel = name[0] in chantypes
 
     noswitch_flag = "-noswitch " if noswitch else ""
     if is_channel:
