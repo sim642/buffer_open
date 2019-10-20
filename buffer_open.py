@@ -24,7 +24,7 @@
 #
 
 """
-Open buffers by full name
+Open buffers by full name, reopen closed recently closed buffers, open layout buffers
 """
 
 # Adding handler for other full names in this script (only if necessary) or other scripts (preferred):
@@ -47,7 +47,7 @@ SCRIPT_NAME = "buffer_open"
 SCRIPT_AUTHOR = "Simmo Saan <simmo.saan@gmail.com>"
 SCRIPT_VERSION = "0.1"
 SCRIPT_LICENSE = "GPL3"
-SCRIPT_DESC = "Open buffers by full name"
+SCRIPT_DESC = "Open buffers by full name, reopen closed recently closed buffers, open layout buffers"
 
 SCRIPT_REPO = "https://github.com/sim642/buffer_open"
 
