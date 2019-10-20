@@ -19,6 +19,8 @@
 #
 # History:
 #
+# 2019-10-20, Simmo Saan <simmo.saan@gmail.com>
+#   version 0.2: improve script description
 # 2019-10-18, Simmo Saan <simmo.saan@gmail.com>
 #   version 0.1: initial script
 #
@@ -45,7 +47,7 @@ from __future__ import print_function
 
 SCRIPT_NAME = "buffer_open"
 SCRIPT_AUTHOR = "Simmo Saan <simmo.saan@gmail.com>"
-SCRIPT_VERSION = "0.1"
+SCRIPT_VERSION = "0.2"
 SCRIPT_LICENSE = "GPL3"
 SCRIPT_DESC = "Open buffers by full name, reopen closed recently closed buffers, open layout buffers"
 
